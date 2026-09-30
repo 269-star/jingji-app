@@ -1,0 +1,16 @@
+{
+  "name": "京迹 · 北京旅游攻略",
+  "short_name": "京迹",
+  "description": "北京景点攻略：进入方式、预约倒计时、黄牛提醒、历史与图片",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf6ef",
+  "theme_color": "#b8342a",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
