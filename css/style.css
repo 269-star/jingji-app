@@ -47,12 +47,65 @@ a { text-decoration: none; color: inherit; }
   box-shadow: 0 2px 6px rgba(0,0,0,.2);
 }
 .brand-name { font-size: 20px; font-weight: 700; letter-spacing: 2px; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
 .city-pill {
   background: rgba(255,255,255,.18);
   border: 1px solid rgba(255,255,255,.35);
   padding: 4px 12px; border-radius: 999px;
-  font-size: 13px;
+  font-size: 13px; display: inline-block;
 }
+.date-pill {
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.35);
+  padding: 4px 12px; border-radius: 999px;
+  font-size: 13px; cursor: pointer; user-select: none;
+}
+
+/* ---------- date sheet ---------- */
+.date-sheet {
+  position: fixed; inset: 0; z-index: 80;
+  background: rgba(0,0,0,.4); 
+}
+.ds-inner {
+  position: absolute; left: 50%; bottom: 0;
+  transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: #fff; border-radius: 20px 20px 0 0;
+  padding: 18px 18px calc(18px + var(--safe-b));
+}
+.ds-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+.ds-inner input[type=date] {
+  width: 100%; padding: 12px; font-size: 16px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--paper);
+}
+.ds-actions { display: flex; gap: 10px; margin-top: 14px; }
+.ds-cancel { flex: 1; padding: 12px; border: 1px solid var(--line); background: #fff; border-radius: 12px; font-size: 14px; color: var(--ink2); cursor: pointer; }
+.ds-ok { flex: 1; padding: 12px; border: none; background: var(--red); color: #fff; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+/* ---------- city grid ---------- */
+.city-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.city-card {
+  position: relative; border-radius: var(--radius);
+  background: linear-gradient(145deg, var(--red) 0%, var(--red-deep) 100%);
+  color: #fff; padding: 18px 16px;
+  box-shadow: 0 4px 14px rgba(156,36,24,.3);
+  cursor: pointer; overflow: hidden;
+}
+.city-card.coming {
+  background: #ece6dc; color: #9a918a; cursor: default; box-shadow: none;
+}
+.cc-emoji { font-size: 30px; margin-bottom: 8px; }
+.cc-emoji.dim { opacity: .5; filter: grayscale(1); }
+.cc-name { font-size: 19px; font-weight: 700; letter-spacing: 1px; }
+.cc-en { font-size: 11px; font-weight: 400; opacity: .7; margin-left: 4px; }
+.cc-tagline { font-size: 12px; opacity: .85; margin-top: 4px; }
+.cc-meta { font-size: 12px; margin-top: 10px; font-weight: 600; }
+.cc-go { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: #ffd9a0; }
+
+/* ---------- weather alert ---------- */
+.wx-alert { margin-top: 10px; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5; }
+.wx-alert.alert-high { background: #fdeeec; border: 1px solid #f3c1ba; color: #7a2620; }
+.wx-alert.alert-low { background: #eef6ee; border: 1px solid #cbe3cd; color: #235a27; }
 
 /* ---------- layout ---------- */
 main {

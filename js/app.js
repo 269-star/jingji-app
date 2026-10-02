@@ -1,5 +1,5 @@
 /* =============================================================
- * 京迹 · 北京旅游攻略 — PWA 应用逻辑
+ * 旅迹 · 城市旅游攻略 — PWA 应用逻辑
  * ============================================================= */
 (function () {
   "use strict";
@@ -19,18 +19,15 @@
     return t.getFullYear() + "-" + pad(t.getMonth() + 1) + "-" + pad(t.getDate());
   }
 
-  function defaultTripDate() {
-    // 默认：下个月的 15 号（“10 月中旬”）
-    const now = new Date();
-    let d = new Date(now.getFullYear(), now.getMonth(), 15);
-    if (d <= startOf(now)) d = new Date(now.getFullYear(), now.getMonth() + 1, 15);
-    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + d.getDate();
+  function defaultTravelDate() {
+    // 默认：今天
+    return todayStr();
   }
 
   // ---------- 状态 ----------
   const store = {
-    get tripDate() { return localStorage.getItem("jj_tripDate") || defaultTripDate(); },
-    setTripDate(v) { localStorage.setItem("jj_tripDate", v); },
+    get travelDate() { return localStorage.getItem("jj_travelDate") || defaultTravelDate(); },
+    setTravelDate(v) { localStorage.setItem("jj_travelDate", v); },
     get tripList() { try { return JSON.parse(localStorage.getItem("jj_trip") || "[]"); } catch { return []; } },
     setTrip(a) { localStorage.setItem("jj_trip", JSON.stringify(a)); }
   };
@@ -64,7 +61,7 @@
   // ---------- 预约提醒逻辑 ----------
   function reservationReminder(spot) {
     const e = spot.entry;
-    const tripDateStr = store.tripDate;
+    const tripDateStr = store.travelDate;
     if (!tripDateStr) return { cls: "reminder-free", text: "先在「我的行程」里选择出行日期" };
     const tripDate = parseDate(tripDateStr);
     const today = startOf(new Date());
@@ -88,10 +85,46 @@
     };
   }
 
-  // ---------- 首页 ----------
-  function renderHome() {
-    const cats = ["全部", ...Array.from(new Set(SPOTS.map(s => s.category)))];
-    const grid = SPOTS.map(s => {
+  // ---------- 城市选择（首页） ----------
+  function renderCities() {
+    const cards = CITIES.map(c => {
+      if (c.status === "ready") {
+        const n = SPOTS.filter(s => (s.city || "beijing") === c.id).length;
+        return (
+          '<a class="city-card ready" href="#/city/' + c.id + '">' +
+          '<div class="cc-emoji">' + c.emoji + "</div>" +
+          '<div class="cc-name">' + c.name + ' <span class="cc-en">' + c.en + "</span></div>" +
+          '<div class="cc-tagline">' + c.tagline + "</div>" +
+          '<div class="cc-meta">' + n + " 个景点 · 美食地图 · 地铁速查</div>" +
+          '<div class="cc-go">进入攻略 →</div></a>'
+        );
+      }
+      return (
+        '<div class="city-card coming"><div class="cc-emoji dim">' + c.emoji + "</div>" +
+        '<div class="cc-name">' + c.name + ' <span class="cc-en">' + c.en + "</span></div>" +
+        '<div class="cc-tagline">' + c.tagline + "</div>" +
+        '<div class="cc-meta">即将上线</div></div>'
+      );
+    }).join("");
+
+    view().innerHTML =
+      '<div class="hero"><h1>选择城市</h1>' +
+      '<div class="hero-sub">逐城攻略 · 预约倒计时 · 黄牛提醒 · 天气穿衣</div></div>' +
+      '<div class="city-grid">' + cards + "</div>" +
+      '<p style="font-size:12px;color:var(--ink2);margin-top:18px;text-align:center;">更多城市持续开发中，想玩哪个城市告诉我们 🙏</p>';
+  }
+
+  // ---------- 城市主页 ----------
+  function renderCityHome(cityId) {
+    const city = CITIES.find(c => c.id === cityId);
+    if (!city) return renderCities();
+    const spots = SPOTS.filter(s => (s.city || "beijing") === cityId);
+    const dObj = parseDate(store.travelDate);
+    const wx = (WEATHER_BY_MONTH[cityId] || []).find(w => w.m === dObj.getMonth() + 1);
+    const alert = crowdAlert(store.travelDate);
+
+    const cats = ["全部", ...Array.from(new Set(spots.map(s => s.category)))];
+    const grid = spots.map(s => {
       const badgeCls = s.entry.type === "预约" ? "badge-reserve" : s.entry.type === "购票" ? "badge-buy" : "badge-free";
       const leadTag = s.entry.leadDays > 0 ? "提前" + s.entry.leadDays + "天" : "";
       return (
@@ -104,37 +137,28 @@
       );
     }).join("");
 
-    const itin = ITINERARY.map(d => {
-      const items = d.items.map(id => {
-        const s = byId(id);
-        return s ? '<a class="itin-item" href="#/spot/' + id + '">' + s.name + "</a>" : "";
-      }).join("");
-      return (
-        '<div class="itin-day"><div class="day-head"><span class="day-num">Day ' + d.day + "</span>" +
-        '<span class="day-title">' + d.title + "</span></div>" +
-        '<div class="itin-items">' + items + "</div></div>"
-      );
-    }).join("");
-
     view().innerHTML =
-      '<div class="hero"><h1>' + CITY.name + " · " + CITY.hero + "</h1>" +
-      '<div class="hero-sub">' + CITY.desc + "</div>" +
-      '<span class="hero-tag">' + SPOTS.length + ' 个景点 · 攻略 + 预约提醒</span></div>' +
+      '<div class="hero"><h1>' + city.name + " · " + fmtMD(dObj) + " 之旅</h1>" +
+      '<div class="hero-sub">' + city.tagline + " · 点右上角 📅 改日期</div>" +
+      '<span class="hero-tag">' + spots.length + " 个景点 · 攻略 + 预约提醒</span></div>" +
 
-      '<div class="dcard"><h2>🧥 10 月中旬 · 天气与穿衣</h2><div class="dc-body">' +
-      '<div class="wx-temp">🌤️ ' + WEATHER.temp + "</div>" +
-      '<ul class="tip-list">' + WEATHER.items.map(i => '<li>' + i.icon + " " + i.text + "</li>").join("") + "</ul>" +
-      '<div class="wx-note">' + WEATHER.note + "</div>" +
-      "</div></div>" +
+      (wx ?
+      '<div class="dcard"><h2>🧥 ' + fmtMD(dObj) + " · " + city.name + " 天气与穿衣</h2><div class=\"dc-body\">" +
+      '<div class="wx-temp">🌤️ ' + wx.temp + "</div>" +
+      '<ul class="tip-list">' +
+      '<li>👕 穿衣建议：<b>' + wx.clothes + "</b></li>" +
+      wx.extras.map(t => "<li>" + t + "</li>").join("") +
+      '<li>👟 每天步数 1.5 万+，一定穿舒适的运动鞋</li>' +
+      "</ul>" +
+      (alert ? '<div class="wx-alert ' + (alert.level === "high" ? "alert-high" : "alert-low") + '">' + alert.text + "</div>" : "") +
+      '<div class="wx-note">实际天气每年有差异，出发前 3-5 天再查一次实时预报 🙏</div>' +
+      "</div></div>" : "") +
 
       '<div class="chips" id="chips">' +
       cats.map((c, i) => '<span class="chip' + (i === 0 ? " active" : "") + '" data-cat="' + c + '">' + c + "</span>").join("") +
       "</div>" +
 
       '<div class="spot-grid" id="grid">' + grid + "</div>" +
-
-      '<div class="section-title">10 月中旬 · 3 天参考行程</div>' +
-      '<div class="itin-card">' + itin + "</div>" +
 
       '<p style="font-size:12px;color:var(--ink2);margin-top:18px;text-align:center;">' +
       '票价与预约政策可能调整，出行前请以官方渠道为准 🙏</p>';
@@ -158,7 +182,7 @@
   // ---------- 详情页 ----------
   function renderSpot(id) {
     const s = byId(id);
-    if (!s) return renderHome();
+    if (!s) return renderCities();
     const added = store.tripList.includes(id);
     const rem = reservationReminder(s);
     const entryCls = s.entry.type === "预约" ? "entry-reserve" : s.entry.type === "购票" ? "entry-buy" : "entry-free";
@@ -167,7 +191,7 @@
 
     view().innerHTML =
       '<div class="detail-hero">' +
-      '<a class="back-btn" href="#/" aria-label="返回">←</a>' +
+      '<a class="back-btn" href="#/city/' + (s.city || "beijing") + '" aria-label="返回">←</a>' +
       '<img src="' + s.img + '" alt="' + s.name + '" data-name="' + s.name + '">' +
       '<div class="dh-overlay"></div>' +
       '<div class="dh-text"><h1>' + s.name + '</h1><div class="dh-en">' + s.en + "</div>" +
@@ -182,7 +206,7 @@
       "<p style='font-size:13.5px;color:var(--ink2)'>" + s.entry.details + "</p>" +
       '<div class="lead-box"><b>放票规则：</b>' + s.entry.leadNote + "</div>" +
       '<div class="channels">' + s.entry.channels.map(c => '<span class="channel">' + c + "</span>").join("") + "</div>" +
-      '<div class="reserve-cta"><div class="rc-title">你 ' + fmtMD(parseDate(store.tripDate)) + " 去 " + s.name + "：</div>" + rem.text + "</div>" +
+      '<div class="reserve-cta"><div class="rc-title">你 ' + fmtMD(parseDate(store.travelDate)) + " 去 " + s.name + "：</div>" + rem.text + "</div>" +
       "</div></div>" +
 
       '<div class="dcard"><h2>💰 票价参考</h2><div class="dc-body">' +
@@ -232,7 +256,7 @@
   function renderTrip() {
     const tripIds = store.tripList;
     const spots = tripIds.map(byId).filter(Boolean);
-    const d = store.tripDate;
+    const d = store.travelDate;
 
     // 票价估算：取每个景点第一条票价里的数字
     let total = 0;
@@ -260,7 +284,7 @@
       '<div class="trip-date-card">' +
       '<label>📅 出行日期（预约倒计时按此计算）</label>' +
       '<div class="tdc-row"><input type="date" id="tripDate" value="' + d + '"></div>' +
-      '<div class="tdc-hint">例：10 月中旬出行，选 10 月 15 日左右</div></div>' +
+      '<div class="tdc-hint">顶部 📅 与此同步，改任一处都会重算预约倒计时</div></div>' +
 
       (spots.length
         ? items
@@ -279,7 +303,7 @@
 
     const dateInput = $("#tripDate");
     dateInput.addEventListener("change", () => {
-      store.setTripDate(dateInput.value || defaultTripDate());
+      store.setTravelDate(dateInput.value || defaultTravelDate());
       toast("已更新出行日期，预约倒计时已重算");
       renderTrip();
     });
@@ -295,7 +319,7 @@
 
     const copyBtn = $("#copyBtn");
     if (copyBtn) copyBtn.addEventListener("click", () => {
-      const lines = ["【北京 " + fmtMD(parseDate(store.tripDate)) + " 行程】"];
+      const lines = ["【北京 " + fmtMD(parseDate(store.travelDate)) + " 行程】"];
       spots.forEach((s, i) => {
         const r = reservationReminder(s);
         lines.push((i + 1) + ". " + s.name + "（" + s.entry.type + "，" + (s.tickets[0] ? s.tickets[0].price : "免费") + "）");
@@ -374,12 +398,57 @@
     window.scrollTo(0, 0);
   }
 
+  // ---------- 顶栏：日期选择 + 城市切换 ----------
+  function bindTopBar() {
+    const pill = $("#datePill");
+    const sheet = $("#dateSheet");
+    const renderPill = () => { pill.textContent = "📅 " + fmtMD(parseDate(store.travelDate)); };
+    renderPill();
+    pill.addEventListener("click", () => {
+      $("#dateInput").value = store.travelDate;
+      sheet.style.display = "block";
+    });
+    $("#dateCancel").addEventListener("click", () => { sheet.style.display = "none"; });
+    $("#dateApply").addEventListener("click", () => {
+      const v = $("#dateInput").value;
+      if (v) store.setTravelDate(v);
+      sheet.style.display = "none";
+      toast("已更新日期，天气/穿衣与预约倒计时已重算");
+      renderPill();
+      route();
+    });
+    sheet.addEventListener("click", ev => { if (ev.target === sheet) sheet.style.display = "none"; });
+  }
+
+  function updateDatePill() {
+    const pill = $("#datePill");
+    if (pill) pill.textContent = "📅 " + fmtMD(parseDate(store.travelDate));
+  }
+
+  function updateCityPill() {
+    const h = location.hash || "#/";
+    let name = "选择城市";
+    if (h.startsWith("#/city/")) {
+      const c = CITIES.find(x => x.id === h.slice("#/city/".length));
+      if (c) name = c.name;
+    } else if (h.startsWith("#/spot/")) {
+      const s = byId(h.slice("#/spot/".length));
+      if (s) { const c = CITIES.find(x => x.id === (s.city || "beijing")); if (c) name = c.name; }
+    } else if (h === "#/trip" || h === "#/food" || h === "#/metro") {
+      name = "北京";
+    }
+    const el = $("#cityPill");
+    if (el) el.textContent = name;
+  }
+
   // ---------- 路由 ----------
   function route() {
     const h = location.hash || "#/";
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
     let tabKey = "home";
-    if (h.startsWith("#/spot/")) {
+    if (h.startsWith("#/city/")) {
+      renderCityHome(h.slice("#/city/".length));
+    } else if (h.startsWith("#/spot/")) {
       renderSpot(h.slice("#/spot/".length));
     } else if (h === "#/food") {
       renderFood();
@@ -391,10 +460,12 @@
       renderTrip();
       tabKey = "trip";
     } else {
-      renderHome();
+      renderCities();
     }
     const tab = document.querySelector('.tab[data-tab="' + tabKey + '"]');
     if (tab) tab.classList.add("active");
+    updateCityPill();
+    updateDatePill();
   }
 
   window.addEventListener("hashchange", route);
@@ -402,6 +473,7 @@
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("sw.js").catch(() => {});
     }
+    bindTopBar();
     route();
   });
 })();

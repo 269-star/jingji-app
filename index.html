@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#b8342a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>京迹 · 北京旅游攻略</title>
+<title>旅迹 · 城市旅游攻略</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="icons/icon-192.png">
@@ -17,18 +17,33 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <span class="brand-mark">京</span>
-        <span class="brand-name">京迹</span>
+        <span class="brand-mark">旅</span>
+        <span class="brand-name">旅迹</span>
       </div>
-      <div class="city-pill" id="cityPill">北京</div>
+      <div class="topbar-actions">
+        <a class="city-pill" id="cityPill" href="#/">选择城市</a>
+        <div class="date-pill" id="datePill">📅 …</div>
+      </div>
     </div>
   </header>
+
+  <!-- 日期选择弹窗 -->
+  <div id="dateSheet" class="date-sheet" style="display:none">
+    <div class="ds-inner">
+      <div class="ds-title">📅 选择出行日期</div>
+      <input type="date" id="dateInput">
+      <div class="ds-actions">
+        <button class="ds-cancel" id="dateCancel">取消</button>
+        <button class="ds-ok" id="dateApply">应用</button>
+      </div>
+    </div>
+  </div>
 
   <main id="view"></main>
 
   <nav class="tabbar">
     <a href="#/" class="tab" data-tab="home">
-      <span class="tab-icon">🏮</span><span class="tab-label">首页</span>
+      <span class="tab-icon">🧭</span><span class="tab-label">城市</span>
     </a>
     <a href="#/food" class="tab" data-tab="food">
       <span class="tab-icon">🦆</span><span class="tab-label">美食</span>

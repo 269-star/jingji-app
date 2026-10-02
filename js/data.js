@@ -465,44 +465,55 @@ const SPOTS = [
   }
 ];
 
-// 10 月中旬 3 天参考行程
-const ITINERARY = [
-  {
-    day: 1,
-    title: "中轴线 + 宫殿",
-    items: ["gugong", "jingshan", "drumbell", "nanluoguxiang"]
-  },
-  {
-    day: 2,
-    title: "长城 + 皇家园林",
-    items: ["changcheng", "yuyuan"]
-  },
-  {
-    day: 3,
-    title: "祭天 + 什刹海",
-    items: ["tiantan", "beihai", "shichahai", "yonghegong"]
-  }
+// 城市列表（未来扩展：新增城市时加一条，并补上该城市的 SPOTS/FOODS/METRO/WEATHER_BY_MONTH 数据即可）
+const CITIES = [
+  { id: "beijing",   name: "北京", en: "Beijing",   emoji: "🏮", tagline: "六朝帝都 · 中轴线之城", status: "ready" },
+  { id: "shanghai",  name: "上海", en: "Shanghai",  emoji: "🌆", tagline: "魔都 · 海派风情", status: "coming" },
+  { id: "xian",      name: "西安", en: "Xi'an",     emoji: "🏯", tagline: "十三朝古都 · 兵马俑", status: "coming" },
+  { id: "chengdu",   name: "成都", en: "Chengdu",   emoji: "🐼", tagline: "天府之国 · 熊猫故乡", status: "coming" },
+  { id: "chongqing", name: "重庆", en: "Chongqing", emoji: "🌃", tagline: "山城 · 8D 魔幻都市", status: "coming" },
+  { id: "hangzhou",  name: "杭州", en: "Hangzhou",  emoji: "⛵", tagline: "人间天堂 · 西湖", status: "coming" },
+  { id: "guangzhou", name: "广州", en: "Guangzhou", emoji: "🥟", tagline: "羊城 · 美食之都", status: "coming" },
+  { id: "harbin",    name: "哈尔滨", en: "Harbin",  emoji: "❄️", tagline: "冰雪之城", status: "coming" }
 ];
 
-const CITY = {
-  name: "北京",
-  en: "Beijing",
-  hero: "10 月中旬 · 3 天攻略",
-  desc: "国庆大客流刚过，秋高气爽，正是逛故宫、登长城、看秋色的好时候。"
+// 北京 · 各月天气与穿衣档案（多年平均，出行前 3-5 天再查实时预报）
+const WEATHER_BY_MONTH = {
+  beijing: [
+    { m: 1,  temp: "白天 0~2°C · 夜间 -12~-7°C", clothes: "羽绒服 + 毛衣，帽子手套必备", extras: ["干冷风大，注意保湿","室内有暖气，可穿脱的外套更方便"] },
+    { m: 2,  temp: "白天 3~8°C · 夜间 -8~-5°C", clothes: "羽绒服 + 围巾", extras: ["一年中最冷时段","风大，护好脖子"] },
+    { m: 3,  temp: "白天 10~15°C · 夜间 1~5°C", clothes: "冲锋衣/薄羽绒 + 长袖", extras: ["多风沙，建议带口罩","昼夜温差大，洋葱式穿法"] },
+    { m: 4,  temp: "白天 17~22°C · 夜间 8~12°C", clothes: "夹克 + 长袖", extras: ["春季最佳，玉兰花开","花粉过敏者注意"] },
+    { m: 5,  temp: "白天 22~28°C · 夜间 14~18°C", clothes: "T恤/薄衬衫 + 外套", extras: ["初夏，紫外线增强，防晒","长城徒步建议轻薄透气"] },
+    { m: 6,  temp: "白天 27~32°C · 夜间 19~23°C", clothes: "短袖为主", extras: ["入夏，防晒 + 遮阳帽","进入雨季，带伞"] },
+    { m: 7,  temp: "白天 28~33°C · 夜间 21~24°C", clothes: "短袖 + 透气衣物", extras: ["最热 + 雨季，防暑","带伞，随身带水"] },
+    { m: 8,  temp: "白天 27~33°C · 夜间 20~24°C", clothes: "短袖 + 透气衣物", extras: ["持续炎热","带伞，防暑"] },
+    { m: 9,  temp: "白天 23~28°C · 夜间 15~19°C", clothes: "长袖 + 薄外套", extras: ["初秋最舒适","秋色开始，银杏微黄"] },
+    { m: 10, temp: "白天 17~24°C · 夜间 8~13°C", clothes: "T恤/薄长袖 + 轻薄外套", extras: ["秋高气爽，一年最美季节","昼夜温差大，早晚加衣；登长城再加一件"] },
+    { m: 11, temp: "白天 9~12°C · 夜间 1~5°C", clothes: "风衣/薄羽绒 + 毛衣", extras: ["入冬，风大注意保暖","供暖开始（室内很暖）"] },
+    { m: 12, temp: "白天 3~6°C · 夜间 -5~-4°C", clothes: "羽绒服 + 帽子围巾", extras: ["干冷","故宫等室内景点可稍减衣"] }
+  ]
 };
 
-// 10 月中旬天气与穿衣建议（多年平均，出行前看实时预报）
-const WEATHER = {
-  temp: "白天约 20-25°C · 夜间 8-14°C · 昼夜温差大",
-  items: [
-    { icon: "🧥", text: "昼夜温差大：白天 T 恤/薄长袖，傍晚加轻薄外套（风衣/牛仔外套）；登长城再加一件" },
-    { icon: "👟", text: "每天步数 1.5 万+，一定穿舒适的运动鞋" },
-    { icon: "💧", text: "北方秋天很干：润肤霜、润唇膏别忘，多喝水" },
-    { icon: "🕶️", text: "紫外线仍强，白天注意防晒（墨镜/防晒霜）" },
-    { icon: "🌧️", text: "雨水不多但可能有，带把折叠伞不占地方" }
-  ],
-  note: "实际天气每年有差异，出发前 3-5 天再查一次预报 🙏"
-};
+// 节假日/人流预警（按日期动态生成）
+function _pd(s) { const p = s.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function crowdAlert(dateStr) {
+  const d = _pd(dateStr);
+  const m = d.getMonth() + 1, day = d.getDate();
+  if (m === 10 && day >= 1 && day <= 7) {
+    return { level: "high", text: "🔥 正处国庆黄金周：人流极大！故宫/长城务必提前 7 天抢票，酒店机票越早订越好" };
+  }
+  if (m === 10 && day >= 8 && day <= 12) {
+    return { level: "low", text: "✅ 刚过国庆黄金周，人流回落，是出行好时机" };
+  }
+  if (m === 1 && day >= 20) {
+    return { level: "high", text: "⚠️ 临近春节/春运：交通、酒店紧张，尽早预订" };
+  }
+  if (m === 5 && day >= 1 && day <= 5) {
+    return { level: "high", text: "🔥 五一假期：热门景点人多票紧，提前预订" };
+  }
+  return null;
+}
 
 // 美食地图（人均参考，实际以店内为准）
 const FOODS = [
