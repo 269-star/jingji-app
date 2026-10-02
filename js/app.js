@@ -32,7 +32,21 @@
     setTrip(a) { localStorage.setItem("jj_trip", JSON.stringify(a)); }
   };
 
-  const byId = id => SPOTS.find(s => s.id === id);
+  const REG = window.CITY_REGISTRY || {};
+  function byId(id) {
+    for (const k in REG) { const s = (REG[k].spots || []).find(x => x.id === id); if (s) return s; }
+    return SPOTS.find(s => s.id === id);
+  }
+  function citySpots(id) { const r = REG[id]; if (r && r.spots) return r.spots; return SPOTS.filter(s => (s.city || "beijing") === id); }
+  function cityFoods(id) { const r = REG[id]; if (r && r.foods) return r.foods; if (id === "beijing") return FOODS; return []; }
+  function cityMetro(id) { const r = REG[id]; if (r && r.metro) return r.metro; if (id === "beijing") return METRO; return []; }
+  function cityMetroTips(id) { const r = REG[id]; if (r && r.metroTips) return r.metroTips; if (id === "beijing") return METRO_TIPS; return []; }
+  function cityWeather(id, month) {
+    const r = REG[id];
+    const arr = (r && r.weather) || WEATHER_BY_MONTH[id] || [];
+    return arr.find(w => String(w.m).replace("月", "") === String(month)) || null;
+  }
+  let currentCityId = "beijing";
 
   function toast(msg) {
     const t = $("#toast");
@@ -143,7 +157,7 @@
   function cityCardsHtml() {
     return CITIES.map(c => {
       if (c.status === "ready") {
-        const n = SPOTS.filter(s => (s.city || "beijing") === c.id).length;
+        const n = citySpots(c.id).length;
         return (
           '<a class="city-card ready" href="#/city/' + c.id + '">' +
           '<div class="cc-emoji">' + c.emoji + "</div>" +
@@ -176,7 +190,7 @@
   function renderCityHome(cityId) {
     const city = CITIES.find(c => c.id === cityId);
     if (!city) return renderCities();
-    const spots = SPOTS.filter(s => (s.city || "beijing") === cityId);
+    const spots = citySpots(cityId);
     const dObj = parseDate(store.travelDate);
 
     const cats = ["全部", ...Array.from(new Set(spots.map(s => s.category)))];
@@ -235,7 +249,7 @@
     if (!body) return;
     const dObj = parseDate(store.travelDate);
     const alert = crowdAlert(store.travelDate);
-    const monthly = (WEATHER_BY_MONTH[cityId] || []).find(w => w.m === dObj.getMonth() + 1);
+    const monthly = cityWeather(cityId, dObj.getMonth() + 1);
 
     const live = await fetchLiveWeather(cityId, store.travelDate);
     let html = "";
@@ -439,8 +453,8 @@
 
   // ---------- 美食 ----------
   function renderFood() {
-    const cats = ["全部", ...Array.from(new Set(FOODS.map(f => f.cat)))];
-    const cards = FOODS.map(f => {
+    const cats = ["全部", ...Array.from(new Set(cityFoods(currentCityId).map(f => f.cat)))];
+    const cards = cityFoods(currentCityId).map(f => {
       const mapUrl = "https://uri.amap.com/search?keyword=" + encodeURIComponent(f.map || f.name) + "&city=北京";
       return ('<a class="food-card" data-cat="' + f.cat + '" href="' + mapUrl + '" target="_blank" rel="noopener">' +
       '<div class="food-head"><div class="food-name">' + f.name + '</div>' +
@@ -474,7 +488,7 @@
 
   // ---------- 地铁出行 ----------
   function renderMetro() {
-    const lines = METRO.map(l =>
+    const lines = cityMetro(currentCityId).map(l =>
       '<div class="metro-card">' +
       '<div class="metro-head"><span class="line-dot" style="background:' + l.color + '"></span>' +
       '<span class="metro-line">' + l.line + '</span>' +
@@ -488,7 +502,7 @@
     view().innerHTML =
       '<div class="hero" style="padding:16px 18px"><h1 style="font-size:20px">地铁出行速查</h1>' +
       '<div class="hero-sub">7 条线路覆盖 12 个景点，8 号线是「游客黄金线」</div></div>' +
-      '<div class="metro-tips">' + METRO_TIPS.map(t => '<ul class="tip-list" style="margin:0"><li>' + t + "</li></ul>").join("") + "</div>" +
+      '<div class="metro-tips">' + cityMetroTips(currentCityId).map(t => '<ul class="tip-list" style="margin:0"><li>' + t + "</li></ul>").join("") + "</div>" +
       lines;
     window.scrollTo(0, 0);
   }
@@ -553,7 +567,8 @@
       const s = byId(h.slice("#/spot/".length));
       if (s) { const c = CITIES.find(x => x.id === (s.city || "beijing")); if (c) name = c.name; }
     } else if (h === "#/trip" || h === "#/food" || h === "#/metro") {
-      name = "北京";
+      const c = CITIES.find(x => x.id === currentCityId);
+      if (c) name = c.name;
     }
     const el = $("#cityPill");
     if (el) el.textContent = name;
@@ -565,8 +580,15 @@
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
     let tabKey = "home";
     if (h.startsWith("#/city/")) {
-      renderCityHome(h.slice("#/city/".length));
+      const cid = h.slice("#/city/".length);
+      if (REG[cid] || cid === "beijing") currentCityId = cid;
+      renderCityHome(cid);
     } else if (h.startsWith("#/spot/")) {
+      const s = byId(h.slice("#/spot/".length));
+      if (s) {
+        const cid = (s.city || "beijing");
+        if (REG[cid] || cid === "beijing") currentCityId = cid;
+      }
       renderSpot(h.slice("#/spot/".length));
     } else if (h === "#/food") {
       renderFood();
