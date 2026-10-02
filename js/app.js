@@ -517,7 +517,7 @@
     // 城市选择子界面（全屏滑入动画）
     const cs = $("#citySheet");
     const openCity = () => {
-      $("#citySheetBody").innerHTML = cityCardsHtml();
+      $("#citySheetBody").innerHTML = '<div class="city-grid">' + cityCardsHtml() + "</div>";
       cs.classList.add("open");
       document.body.classList.add("no-scroll");
     };

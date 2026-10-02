@@ -97,7 +97,7 @@ h1, h2, .brand-name, .cc-name, .dh-text h1 { font-family: var(--serif); }
 /* ---------- city grid ---------- */
 .city-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
 .city-card {
-  position: relative; border-radius: var(--radius);
+  position: relative; display: block; border-radius: var(--radius);
   background:
     radial-gradient(90% 70% at 90% -10%, rgba(217,192,140,.30) 0%, transparent 55%),
     linear-gradient(140deg, #26211d 0%, #4a2a22 48%, #8a2a1f 100%);
