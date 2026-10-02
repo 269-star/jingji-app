@@ -58,6 +58,60 @@
     img.addEventListener("error", () => { img.onerror = null; img.src = fallbackImg(name); }, { once: true });
   }
 
+  // ---------- 实时天气（Open-Meteo，免费无 key） ----------
+  function wmoIcon(code) {
+    if (code === 0) return "☀️";
+    if (code <= 2) return "🌤️";
+    if (code === 3) return "☁️";
+    if (code === 45 || code === 48) return "🌫️";
+    if (code < 51) return "🌦️";
+    if (code < 71) return "🌧️";
+    if (code < 80) return "🌨️";
+    if (code < 87) return "🌦️";
+    if (code < 95) return "🌨️";
+    return "⛈️";
+  }
+
+  function clothesFromTemp(tmax, tmin) {
+    if (tmax >= 28) return "短袖T恤/裙装即可，注意防晒补水";
+    if (tmax >= 23) return "长袖T恤/薄衬衫，怕凉备一件薄外套";
+    if (tmax >= 18) return "薄外套/卫衣 + 长裤";
+    if (tmax >= 13) return "夹克/风衣 + 长袖内搭";
+    if (tmax >= 8) return "毛衣 + 外套，早晚更冷";
+    if (tmax >= 3) return "薄羽绒/厚外套 + 毛衣";
+    return "羽绒服 + 毛衣，帽子围巾手套";
+  }
+
+  async function fetchLiveWeather(cityId, dateStr) {
+    const coord = CITY_COORDS[cityId];
+    if (!coord) return null;
+    const target = parseDate(dateStr);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const days = Math.round((target - today) / 86400000);
+    if (days < 0 || days > 15) return null; // 实时预报只覆盖 15 天内
+    try {
+      const url = "https://api.open-meteo.com/v1/forecast?latitude=" + coord.lat +
+        "&longitude=" + coord.lng +
+        "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode,wind_speed_10m_max" +
+        "&timezone=Asia%2FShanghai&start_date=" + dateStr + "&end_date=" + dateStr;
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000);
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!res.ok) return null;
+      const j = await res.json();
+      const d = j && j.daily;
+      if (!d || !d.time || !d.time.length) return null;
+      return {
+        tmax: Math.round(d.temperature_2m_max[0]),
+        tmin: Math.round(d.temperature_2m_min[0]),
+        precip: d.precipitation_sum ? d.precipitation_sum[0] : 0,
+        code: d.weathercode ? d.weathercode[0] : 0,
+        wind: d.wind_speed_10m_max ? d.wind_speed_10m_max[0] : 0
+      };
+    } catch (e) { return null; }
+  }
+
   // ---------- 预约提醒逻辑 ----------
   function reservationReminder(spot) {
     const e = spot.entry;
@@ -120,8 +174,6 @@
     if (!city) return renderCities();
     const spots = SPOTS.filter(s => (s.city || "beijing") === cityId);
     const dObj = parseDate(store.travelDate);
-    const wx = (WEATHER_BY_MONTH[cityId] || []).find(w => w.m === dObj.getMonth() + 1);
-    const alert = crowdAlert(store.travelDate);
 
     const cats = ["全部", ...Array.from(new Set(spots.map(s => s.category)))];
     const grid = spots.map(s => {
@@ -142,17 +194,8 @@
       '<div class="hero-sub">' + city.tagline + " · 点右上角 📅 改日期</div>" +
       '<span class="hero-tag">' + spots.length + " 个景点 · 攻略 + 预约提醒</span></div>" +
 
-      (wx ?
-      '<div class="dcard"><h2>🧥 ' + fmtMD(dObj) + " · " + city.name + " 天气与穿衣</h2><div class=\"dc-body\">" +
-      '<div class="wx-temp">🌤️ ' + wx.temp + "</div>" +
-      '<ul class="tip-list">' +
-      '<li>👕 穿衣建议：<b>' + wx.clothes + "</b></li>" +
-      wx.extras.map(t => "<li>" + t + "</li>").join("") +
-      '<li>👟 每天步数 1.5 万+，一定穿舒适的运动鞋</li>' +
-      "</ul>" +
-      (alert ? '<div class="wx-alert ' + (alert.level === "high" ? "alert-high" : "alert-low") + '">' + alert.text + "</div>" : "") +
-      '<div class="wx-note">实际天气每年有差异，出发前 3-5 天再查一次实时预报 🙏</div>' +
-      "</div></div>" : "") +
+      '<div class="dcard" id="wxCard"><h2>🧥 ' + fmtMD(dObj) + " · " + city.name + " 天气与穿衣</h2>" +
+      '<div class="dc-body" id="wxBody"><div class="wx-loading">📡 正在获取实时天气…</div></div></div>' +
 
       '<div class="chips" id="chips">' +
       cats.map((c, i) => '<span class="chip' + (i === 0 ? " active" : "") + '" data-cat="' + c + '">' + c + "</span>").join("") +
@@ -176,6 +219,51 @@
       view().querySelectorAll(".spot-card").forEach(card => {
         card.style.display = cat === "全部" || card.dataset.cat === cat ? "" : "none";
       });
+    });
+
+    // 实时天气（异步填充）
+    loadLiveWeather(cityId);
+  }
+
+  // ---------- 实时天气卡 ----------
+  async function loadLiveWeather(cityId) {
+    const body = document.getElementById("wxBody");
+    if (!body) return;
+    const dObj = parseDate(store.travelDate);
+    const alert = crowdAlert(store.travelDate);
+    const monthly = (WEATHER_BY_MONTH[cityId] || []).find(w => w.m === dObj.getMonth() + 1);
+
+    const live = await fetchLiveWeather(cityId, store.travelDate);
+    let html = "";
+    if (live) {
+      const tips = ["👕 穿衣建议：<b>" + clothesFromTemp(live.tmax, live.tmin) + "</b>"];
+      if (live.precip >= 1) tips.push("☔ 有降水（约 " + live.precip + "mm），建议带折叠伞");
+      if (live.wind >= 20) tips.push("💨 最大风速 " + Math.round(live.wind) + " km/h，建议防风外套");
+      if (live.tmin <= 5) tips.push("🌡 夜间最低 " + live.tmin + "°C，早晚出门多穿一件");
+      tips.push("👟 每天步数 1.5 万+，一定穿舒适的运动鞋");
+      html =
+        '<div class="wx-temp">' + wmoIcon(live.code) + " 白天 " + live.tmax + "°C · 夜间 " + live.tmin + "°C</div>" +
+        '<ul class="tip-list">' + tips.map(t => "<li>" + t + "</li>").join("") + "</ul>" +
+        (alert ? '<div class="wx-alert ' + (alert.level === "high" ? "alert-high" : "alert-low") + '">' + alert.text + "</div>" : "") +
+        '<div class="wx-note">实时预报（Open-Meteo）· <span class="wx-refresh" id="wxRefresh">↻ 刷新</span> · 出发前再看一眼</div>';
+    } else if (monthly) {
+      html =
+        '<div class="wx-temp">🌤️ ' + monthly.temp + "</div>" +
+        '<ul class="tip-list">' +
+        '<li>👕 穿衣建议：<b>' + monthly.clothes + "</b></li>" +
+        monthly.extras.map(t => "<li>" + t + "</li>").join("") +
+        '<li>👟 每天步数 1.5 万+，一定穿舒适的运动鞋</li>' +
+        "</ul>" +
+        (alert ? '<div class="wx-alert ' + (alert.level === "high" ? "alert-high" : "alert-low") + '">' + alert.text + "</div>" : "") +
+        '<div class="wx-note">该日期超出实时预报范围（仅 15 天内），显示气候参考；日期临近后自动切换为实时预报</div>';
+    } else {
+      html = '<div class="wx-note">该城市天气数据准备中…</div>';
+    }
+    body.innerHTML = html;
+    const rf = document.getElementById("wxRefresh");
+    if (rf) rf.addEventListener("click", () => {
+      body.innerHTML = '<div class="wx-loading">📡 正在刷新实时天气…</div>';
+      loadLiveWeather(cityId);
     });
   }
 
@@ -348,18 +436,21 @@
   // ---------- 美食 ----------
   function renderFood() {
     const cats = ["全部", ...Array.from(new Set(FOODS.map(f => f.cat)))];
-    const cards = FOODS.map(f =>
-      '<div class="food-card" data-cat="' + f.cat + '">' +
+    const cards = FOODS.map(f => {
+      const mapUrl = "https://uri.amap.com/search?keyword=" + encodeURIComponent(f.map || f.name) + "&city=北京";
+      return ('<a class="food-card" data-cat="' + f.cat + '" href="' + mapUrl + '" target="_blank" rel="noopener">' +
       '<div class="food-head"><div class="food-name">' + f.name + '</div>' +
       '<span class="food-badge">' + f.cat + "</span></div>" +
-      '<div class="food-meta">📍 ' + f.area + " · 💰 " + f.budget + "</div>" +
+      '<div class="food-addr">📍 ' + f.addr + "</div>" +
+      '<div class="food-meta">💰 ' + f.budget + "</div>" +
       '<div class="food-sign">🍽️ 招牌：<b>' + f.sign + "</b></div>" +
-      '<div class="food-tip">💡 ' + f.tip + "</div></div>"
-    ).join("");
+      '<div class="food-tip">💡 ' + f.tip + "</div>" +
+      '<div class="food-go">点击打开高德地图 · 导航/看实时排队 →</div></a>');
+    }).join("");
 
     view().innerHTML =
       '<div class="hero" style="padding:16px 18px"><h1 style="font-size:20px">美食地图</h1>' +
-      '<div class="hero-sub">先吃饭，再逛景点——人均参考，实际以店内为准</div></div>' +
+      '<div class="hero-sub">本地人常去的店，点卡片直接打开高德地图</div></div>' +
       '<div class="chips" id="foodChips">' +
       cats.map((c, i) => '<span class="chip' + (i === 0 ? " active" : "") + '" data-cat="' + c + '">' + c + "</span>").join("") +
       "</div>" + cards;
