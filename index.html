@@ -21,11 +21,23 @@
         <span class="brand-name">旅迹</span>
       </div>
       <div class="topbar-actions">
-        <a class="city-pill" id="cityPill" href="#/">选择城市</a>
+        <div class="city-pill" id="cityPill">选择城市</div>
         <div class="date-pill" id="datePill">📅 …</div>
       </div>
     </div>
   </header>
+
+  <!-- 城市选择子界面（全屏滑入） -->
+  <div id="citySheet" class="city-sheet">
+    <div class="cs-backdrop"></div>
+    <div class="cs-panel">
+      <div class="cs-head">
+        <button class="cs-close" id="cityClose" aria-label="返回">←</button>
+        <div class="cs-title">选择城市</div>
+      </div>
+      <div class="cs-body" id="citySheetBody"></div>
+    </div>
+  </div>
 
   <!-- 日期选择弹窗 -->
   <div id="dateSheet" class="date-sheet" style="display:none">

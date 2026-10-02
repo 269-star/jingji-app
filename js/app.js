@@ -139,9 +139,9 @@
     };
   }
 
-  // ---------- 城市选择（首页） ----------
-  function renderCities() {
-    const cards = CITIES.map(c => {
+  // ---------- 城市选择（首页 / 子界面共用） ----------
+  function cityCardsHtml() {
+    return CITIES.map(c => {
       if (c.status === "ready") {
         const n = SPOTS.filter(s => (s.city || "beijing") === c.id).length;
         return (
@@ -160,6 +160,10 @@
         '<div class="cc-meta">即将上线</div></div>'
       );
     }).join("");
+  }
+
+  function renderCities() {
+    const cards = cityCardsHtml();
 
     view().innerHTML =
       '<div class="hero"><h1>选择城市</h1>' +
@@ -509,6 +513,29 @@
       route();
     });
     sheet.addEventListener("click", ev => { if (ev.target === sheet) sheet.style.display = "none"; });
+
+    // 城市选择子界面（全屏滑入动画）
+    const cs = $("#citySheet");
+    const openCity = () => {
+      $("#citySheetBody").innerHTML = cityCardsHtml();
+      cs.classList.add("open");
+      document.body.classList.add("no-scroll");
+    };
+    const closeCity = () => {
+      cs.classList.remove("open");
+      document.body.classList.remove("no-scroll");
+    };
+    $("#cityPill").addEventListener("click", openCity);
+    $("#cityClose").addEventListener("click", closeCity);
+    cs.addEventListener("click", ev => {
+      if (ev.target.classList.contains("cs-backdrop")) closeCity();
+      const card = ev.target.closest(".city-card.ready");
+      if (card) {
+        ev.preventDefault();
+        closeCity();
+        setTimeout(() => { location.hash = card.getAttribute("href"); }, 240); // 等滑出动画
+      }
+    });
   }
 
   function updateDatePill() {

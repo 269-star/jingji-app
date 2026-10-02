@@ -117,6 +117,53 @@ h1, h2, .brand-name, .cc-name, .dh-text h1 { font-family: var(--serif); }
 .cc-meta { font-size: 12px; margin-top: 10px; font-weight: 600; color: var(--gold-light); }
 .cc-go { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--gold-light); }
 
+/* ---------- 城市选择子界面（全屏滑入） ---------- */
+body.no-scroll { overflow: hidden; }
+.city-sheet { position: fixed; inset: 0; z-index: 75; visibility: hidden; }
+.city-sheet.open { visibility: visible; }
+.cs-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(30,26,22,.48);
+  opacity: 0; transition: opacity .3s ease;
+}
+.city-sheet.open .cs-backdrop { opacity: 1; }
+.cs-panel {
+  position: absolute; inset: 0;
+  width: 100%; max-width: 480px; margin: 0 auto;
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(217,192,140,.12) 0%, transparent 55%),
+    var(--bg);
+  transform: translateX(102%);
+  transition: transform .32s cubic-bezier(.32,.72,.25,1);
+  box-shadow: -10px 0 40px rgba(0,0,0,.22);
+  display: flex; flex-direction: column;
+}
+.city-sheet.open .cs-panel { transform: translateX(0); }
+.cs-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(16px + var(--safe-t)) 16px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.cs-close {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--card);
+  font-size: 18px; cursor: pointer; color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+}
+.cs-close:active { background: var(--bg); }
+.cs-title { font-size: 19px; font-weight: 700; letter-spacing: 3px; color: var(--ink); }
+.cs-body { flex: 1; overflow-y: auto; padding: 14px 14px calc(30px + var(--safe-b)); }
+.cs-body .city-grid { margin-top: 0; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.city-sheet.open .cs-body .city-card { animation: cardIn .38s ease both; }
+.city-sheet.open .cs-body .city-card:nth-child(2) { animation-delay: .04s; }
+.city-sheet.open .cs-body .city-card:nth-child(3) { animation-delay: .08s; }
+.city-sheet.open .cs-body .city-card:nth-child(4) { animation-delay: .12s; }
+.city-sheet.open .cs-body .city-card:nth-child(5) { animation-delay: .16s; }
+.city-sheet.open .cs-body .city-card:nth-child(6) { animation-delay: .2s; }
+.city-sheet.open .cs-body .city-card:nth-child(7) { animation-delay: .24s; }
+.city-sheet.open .cs-body .city-card:nth-child(8) { animation-delay: .28s; }
+
 /* ---------- weather alert ---------- */
 .wx-alert { margin-top: 10px; border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.5; }
 .wx-alert.alert-high { background: #f9eae7; border: 1px solid #e6c3bc; color: #7a2620; }
