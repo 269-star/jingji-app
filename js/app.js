@@ -33,6 +33,31 @@
   };
 
   const REG = window.CITY_REGISTRY || {};
+
+  // 城市主题：每个城市一套专属色调（主色 / Hero 渐变 / 顶栏渐变）
+  const CITY_THEMES = {
+    beijing:   { c:"#b5372a", cd:"#7e241c", hero:["#26211d","#4a2a22","#8a2a1f"], top:["#26211d","#322620","#4a241d"] }, // 朱砂 · 墨 · 金
+    shanghai:  { c:"#2f4d7c", cd:"#1b2f52", hero:["#101a2e","#1f3a5f","#2f4d7c"], top:["#101a2e","#182a45","#1f3a5f"] }, // 魔都黛蓝 · 装饰金
+    xian:      { c:"#9a6b2f", cd:"#6e4a1c", hero:["#241c10","#4a3418","#8a5a22"], top:["#241c10","#332814","#4a3418"] }, // 唐土 · 鎏金
+    chengdu:   { c:"#3f7d5c", cd:"#26523c", hero:["#12201a","#24402f","#3f6b4f"], top:["#12201a","#1c3024","#26443a"] }, // 蜀竹青
+    chongqing: { c:"#8a3a5c", cd:"#5c2240", hero:["#1f1218","#3a2030","#6e2c48"], top:["#1f1218","#2e1a24","#44222f"] }, // 山城霓虹梅紫
+    hangzhou:  { c:"#46716b", cd:"#2c4f49", hero:["#14231f","#243f38","#3d5f56"], top:["#14231f","#1d332c","#2c4a42"] }, // 西湖青瓷
+    guangzhou: { c:"#c25a2a", cd:"#8a3a1a", hero:["#241610","#4a2c18","#8a4a1f"], top:["#241610","#35241a","#4a2e1a"] }, // 岭南朱橙
+    harbin:    { c:"#3a6d8c", cd:"#1f4560", hero:["#101c26","#1f3a52","#2f5574"], top:["#101c26","#182c3e","#1f4058"] }  // 冰雪蓝
+  };
+  function updateTheme(cityId) {
+    const t = CITY_THEMES[cityId] || CITY_THEMES.beijing;
+    const r = document.documentElement;
+    r.style.setProperty("--cinnabar", t.c);
+    r.style.setProperty("--cinnabar-deep", t.cd);
+    r.style.setProperty("--hero-1", t.hero[0]);
+    r.style.setProperty("--hero-2", t.hero[1]);
+    r.style.setProperty("--hero-3", t.hero[2]);
+    r.style.setProperty("--top-1", t.top[0]);
+    r.style.setProperty("--top-2", t.top[1]);
+    r.style.setProperty("--top-3", t.top[2]);
+  }
+
   function byId(id) {
     for (const k in REG) { const s = (REG[k].spots || []).find(x => x.id === id); if (s) return s; }
     return SPOTS.find(s => s.id === id);
@@ -158,8 +183,10 @@
     return CITIES.map(c => {
       if (c.status === "ready") {
         const n = citySpots(c.id).length;
+        const th = CITY_THEMES[c.id] || CITY_THEMES.beijing;
+        const bg = 'background: radial-gradient(90% 70% at 90% -10%, rgba(217,192,140,.30) 0%, transparent 55%), linear-gradient(140deg, ' + th.hero[0] + ' 0%, ' + th.hero[1] + ' 48%, ' + th.hero[2] + ' 100%)';
         return (
-          '<a class="city-card ready" href="#/city/' + c.id + '">' +
+          '<a class="city-card ready" href="#/city/' + c.id + '" style="' + bg + '">' +
           '<div class="cc-emoji">' + c.emoji + "</div>" +
           '<div class="cc-name">' + c.name + ' <span class="cc-en">' + c.en + "</span></div>" +
           '<div class="cc-tagline">' + c.tagline + "</div>" +
@@ -604,6 +631,8 @@
     }
     const tab = document.querySelector('.tab[data-tab="' + tabKey + '"]');
     if (tab) tab.classList.add("active");
+    const themeCity = (h === "#/" || h === "#") ? "beijing" : (currentCityId && REG[currentCityId] ? currentCityId : "beijing");
+    updateTheme(themeCity);
     updateCityPill();
     updateDatePill();
   }

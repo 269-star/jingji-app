@@ -20,6 +20,9 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   --serif: "Songti SC", "STSong", "Noto Serif SC", "SimSun", serif;
+  /* 城市主题色（由 app.js 按城市动态覆盖，默认北京） */
+  --hero-1: #26211d; --hero-2: #4a2a22; --hero-3: #8a2a1f;
+  --top-1: #26211d; --top-2: #322620; --top-3: #4a241d;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -40,7 +43,7 @@ h1, h2, .brand-name, .cc-name, .dh-text h1 { font-family: var(--serif); }
 /* ---------- top bar（墨色 + 鎏金） ---------- */
 .topbar {
   position: sticky; top: 0; z-index: 50;
-  background: linear-gradient(150deg, #26211d 0%, #322620 60%, #4a241d 100%);
+  background: linear-gradient(150deg, var(--top-1) 0%, var(--top-2) 60%, var(--top-3) 100%);
   color: #fff;
   padding: calc(10px + var(--safe-t)) 16px 10px;
   border-bottom: 1px solid rgba(217,192,140,.35);
@@ -190,7 +193,7 @@ main {
   overflow: hidden; color: #fff;
   background:
     radial-gradient(120% 90% at 88% -20%, rgba(217,192,140,.34) 0%, transparent 55%),
-    linear-gradient(140deg, #26211d 0%, #4a2a22 45%, #8a2a1f 100%);
+    linear-gradient(140deg, var(--hero-1) 0%, var(--hero-2) 45%, var(--hero-3) 100%);
   padding: 22px 18px;
   box-shadow: 0 6px 18px rgba(60,32,24,.3);
 }
